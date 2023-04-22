@@ -11,7 +11,6 @@ kind: Deployment
 metadata:
   name: myapp
 spec:
-
   selector:
     matchLabels:
       app: myapp
@@ -21,20 +20,25 @@ spec:
         app: myapp
     spec:
       serviceAccountName: sandboxsa
-      terminationGracePeriodSeconds: 60
+
+
       initContainers:
         - name: bucket-data
-          command: ['aws', 's3', 'ls']
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-          image: amazon/aws-cli:latest
+          args: ["s3", "cp", "s3://chimp-sandbox-poc-cdk/index.html", "/data"]
+          image: amazon/aws-cli
+          volumeMounts:
+          - name: my-data
+            mountPath: /data
       containers:
       - name: myapp
         image: httpd
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
+        volumeMounts:
+        - name: my-data
+          mountPath: /data        
         ports:
         - containerPort: 80
+
+      volumes:
+      - name: my-data
+        emptyDir: {}      
+        
